@@ -1,4 +1,4 @@
 libertymail-go
-============
+==================
 
-LibertyMail client in Go
+LibertyMail client written in Go
