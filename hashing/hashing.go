@@ -4,7 +4,7 @@
 
 package hashing
 
-import (	
+import (
 	"crypto/sha512"
 
 	"libertymail-go/ripemd160"
@@ -13,7 +13,7 @@ import (
 func SHA512(p []byte) []byte {
 
 	sha := sha512.New()
-	sha.Write(p)	
+	sha.Write(p)
 	return sha.Sum(nil)
 }
 
@@ -28,7 +28,7 @@ func SHA512x2(p []byte) []byte {
 func RIPEMD160(p []byte) []byte {
 
 	ripe := ripemd160.New()
-	ripe.Write(p)	
+	ripe.Write(p)
 	return ripe.Sum(nil)
 }
 
