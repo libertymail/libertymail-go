@@ -1,4 +1,4 @@
-libremail-go
+libertymail-go
 ============
 
-LibreMail client in Go
+LibertyMail client in Go
