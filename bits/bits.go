@@ -12,7 +12,7 @@ import (
 
 func Checksum(p []byte, n int) []byte {
 
-	npad := len(p) % n
+	npad := n - (len(p) % n)
 	check := make([]byte, n)
 	buf := make([]byte, len(p)+npad)
 	copy(buf, p)
