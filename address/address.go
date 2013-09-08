@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"libertymail-go/base58"
-	"libertymail-go/hashing"
+	"libertymail-go/bits"
 )
 
 type address struct {
@@ -22,7 +22,7 @@ type address struct {
 	Key              *ecdsa.PrivateKey
 }
 
-func NewAddress(version, privacy byte) (*address, error) {
+func NewAddress(version, privacy byte, long bool) (*address, error) {
 
 	var err error
 	addr := new(address)
@@ -35,27 +35,24 @@ func NewAddress(version, privacy byte) (*address, error) {
 	addr.Privacy = privacy
 
 	var ident bytes.Buffer
-	ident.WriteByte(version)
-	ident.WriteByte(privacy)
+	ident.WriteByte(addr.Version)
+	ident.WriteByte(addr.Privacy)
+	ident.Write(addr.Key.PublicKey.X.Bytes())
+	ident.Write(addr.Key.PublicKey.Y.Bytes())
+	cs := bits.Checksum(ident.Bytes(), 2)
+	ident.Write(cs)
 
-	var buf bytes.Buffer
-	buf.Write(addr.Key.PublicKey.X.Bytes())
-	buf.Write(addr.Key.PublicKey.Y.Bytes())
-	shaDigest := hashing.SHA512x2(buf.Bytes())
-	ripeDigest := hashing.RIPEMD160x2(shaDigest)
-
-	ident.Write(ripeDigest)
-	checksum := hashing.SHA512x2(ident.Bytes())[:2]
-	ident.Write(checksum)
-
-	ident58, _ := base58.Encode(ident.Bytes())
+	ident58, err := base58.Encode(ident.Bytes())
+	if err != nil {
+		return nil, errors.New("address.NewAddress: Error base58 encoding: " + err.Error())
+	}
 	addr.Identifier = "LM:" + ident58
 	return addr, nil
 }
 
 func ValidateIdentifier(identifier string) bool {
 
-	if len(identifier) < 27 { // LM: + version + privacy + ripe + checksum
+	if len(identifier) < 7 { // LM: + version + privacy + checksum
 		return false
 	}
 
@@ -66,16 +63,19 @@ func ValidateIdentifier(identifier string) bool {
 	return true
 }
 
-func ValidateChecksum(identifier string) bool {
+func ValidateChecksum(identifier string) (bool, error) {
 
 	if !ValidateIdentifier(identifier) {
-		return false
+		return false, nil
 	}
 
-	raw, _ := base58.Decode(identifier[3:])
+	raw, err := base58.Decode(identifier[3:])
+	if err != nil {
+		return false, errors.New("address.ValidateChecksum: Error base58 decoding: " + err.Error())
+	}
 	ident := raw[:len(raw)-2]
 	cs1 := raw[len(raw)-2:]
-	cs2 := hashing.SHA512x2(ident)[:2]
+	cs2 := bits.Checksum(ident, 2)
 
-	return bytes.Compare(cs1, cs2) == 0
+	return bytes.Compare(cs1, cs2) == 0, nil
 }
