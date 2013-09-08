@@ -1,6 +1,19 @@
-// LICENSE: GNU General Public License version 2
+/*
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 // CONTRIBUTORS AND COPYRIGHT HOLDERS (c) 2013:
-// Dag Robøle (go.libremail AT gmail DOT com)
+// Dag Robøle (BM-2DAS9BAs92wLKajVy9DS1LFcDiey5dxp5c)
 
 package base58
 
@@ -40,12 +53,12 @@ func Encode(b []byte) (string, error) {
 		n.Div(n, base) // FIXME: Use DivMod
 		buffer.WriteByte(alphabet58[r.Uint64()])
 	}
-
+	
 	length := len(b)
-	for i := 0; i < length && b[i] == 0; i++ {
-		buffer.WriteByte(alphabet58[0])
-	}
-
+    for i := 0; i < length && b[i] == 0; i++ {
+		buffer.WriteByte(alphabet58[0])		
+	}        
+		
 	length = len(buffer.Bytes())
 	for i := 0; i < length/2; i++ {
 		buffer.Bytes()[i], buffer.Bytes()[length-1-i] = buffer.Bytes()[length-1-i], buffer.Bytes()[i]
@@ -70,13 +83,13 @@ func Decode(encoded string) ([]byte, error) {
 		bn.Mul(bn, base)
 		bn.Add(bn, tmp)
 	}
-
+	
 	var buf bytes.Buffer
 	length := len(encoded)
-	for i := 0; i < length && encoded[i] == alphabet58[0]; i++ {
-		buf.WriteByte(0)
+    for i := 0; i < length && encoded[i] == alphabet58[0]; i++ {
+		buf.WriteByte(0)		
 	}
-	buf.Write(bn.Bytes())
+	buf.Write(bn.Bytes())	
 
 	return buf.Bytes(), nil
 }

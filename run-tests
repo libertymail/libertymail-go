@@ -1,13 +1,13 @@
 #!/bin/bash
 
 go test -i libertymail-go/ripemd160
-go test -i libertymail-go/hashing
+go test -i libertymail-go/bits
 go test -i libertymail-go/base58
 go test -i libertymail-go/address
 #go test -i libertymail-go/proto
 
 go test libertymail-go/ripemd160
-go test libertymail-go/hashing
+go test libertymail-go/bits
 go test libertymail-go/base58
 go test libertymail-go/address
 #go test libertymail-go/proto
