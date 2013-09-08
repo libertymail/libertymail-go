@@ -5,6 +5,7 @@
 package hashing
 
 import (
+	"crypto/sha256"
 	"crypto/sha512"
 
 	"libertymail-go/ripemd160"
@@ -38,4 +39,11 @@ func RIPEMD160x2(p []byte) []byte {
 	ripe1.Write(p)
 	ripe2.Write(ripe1.Sum(nil))
 	return ripe2.Sum(nil)
+}
+
+func SHA256_RIPEMD160(p []byte) []byte {
+
+	ripe := ripemd160.New().Write(p)
+	sha := sha256.New().Write(ripe.Sum(nil))
+	return sha.Sum(nil)
 }

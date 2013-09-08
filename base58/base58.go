@@ -40,12 +40,12 @@ func Encode(b []byte) (string, error) {
 		n.Div(n, base) // FIXME: Use DivMod
 		buffer.WriteByte(alphabet58[r.Uint64()])
 	}
-	
+
 	length := len(b)
-    for i := 0; i < length && b[i] == 0; i++ {
-		buffer.WriteByte(alphabet58[0])		
-	}        
-		
+	for i := 0; i < length && b[i] == 0; i++ {
+		buffer.WriteByte(alphabet58[0])
+	}
+
 	length = len(buffer.Bytes())
 	for i := 0; i < length/2; i++ {
 		buffer.Bytes()[i], buffer.Bytes()[length-1-i] = buffer.Bytes()[length-1-i], buffer.Bytes()[i]
@@ -70,13 +70,13 @@ func Decode(encoded string) ([]byte, error) {
 		bn.Mul(bn, base)
 		bn.Add(bn, tmp)
 	}
-	
+
 	var buf bytes.Buffer
 	length := len(encoded)
-    for i := 0; i < length && encoded[i] == alphabet58[0]; i++ {
-		buf.WriteByte(0)		
+	for i := 0; i < length && encoded[i] == alphabet58[0]; i++ {
+		buf.WriteByte(0)
 	}
-	buf.Write(bn.Bytes())	
+	buf.Write(bn.Bytes())
 
 	return buf.Bytes(), nil
 }

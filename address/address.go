@@ -41,10 +41,9 @@ func NewAddress(version, privacy byte) (*address, error) {
 	var buf bytes.Buffer
 	buf.Write(addr.Key.PublicKey.X.Bytes())
 	buf.Write(addr.Key.PublicKey.Y.Bytes())
-	shaDigest := hashing.SHA512x2(buf.Bytes())
-	ripeDigest := hashing.RIPEMD160x2(shaDigest)
+	digest := hashing.SHA512_ripemd160(buf.Bytes())
 
-	ident.Write(ripeDigest)
+	ident.Write(digest)
 	checksum := hashing.SHA512x2(ident.Bytes())[:2]
 	ident.Write(checksum)
 
