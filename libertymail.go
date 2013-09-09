@@ -12,7 +12,7 @@ import (
 
 func main() {
 
-	addr, _ := address.NewAddress(1, 0, false)
+	addr, _ := address.NewAddress(1, 0)
 
 	fmt.Println(addr.Identifier)
 }

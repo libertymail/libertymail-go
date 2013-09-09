@@ -1,7 +1,7 @@
 
 package proto
 
-type Serializable interface {
+type Serializer interface {
 	func Serialize() ([]byte, error)
 	func Deserialize(packet []byte) error
 }
