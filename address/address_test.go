@@ -6,7 +6,7 @@ import (
 
 func TestAddress(t *testing.T) {
 
-	addr, err := NewAddress(1, 0, false)
+	addr, err := NewAddress(1, 0)
 	if err != nil {
 		t.Error(err.Error())
 	}

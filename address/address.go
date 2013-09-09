@@ -22,7 +22,7 @@ type address struct {
 	Key              *ecdsa.PrivateKey
 }
 
-func NewAddress(version, privacy byte, long bool) (*address, error) {
+func NewAddress(version, privacy byte) (*address, error) {
 
 	var err error
 	addr := new(address)
