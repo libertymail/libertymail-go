@@ -6,11 +6,16 @@ package bits
 
 import (
 	"crypto/sha256"
+	"errors"
 
 	"libertymail-go/ripemd160"
 )
 
-func Checksum(p []byte, n int) []byte {
+func Checksum(p []byte, n int) ([]byte, error) {
+
+	if n > len(p) {
+		return nil, errors.New("bits.Checksum: checksum size is bigger than digest length")
+	}
 
 	npad := n - (len(p) % n)
 	check := make([]byte, n)
@@ -23,7 +28,7 @@ func Checksum(p []byte, n int) []byte {
 		}
 	}
 
-	return check
+	return check, nil
 }
 
 func SHA256(p []byte) []byte {

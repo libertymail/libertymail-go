@@ -39,7 +39,10 @@ func NewAddress(version, privacy byte) (*address, error) {
 	ident.WriteByte(addr.Privacy)
 	ident.Write(addr.Key.PublicKey.X.Bytes())
 	ident.Write(addr.Key.PublicKey.Y.Bytes())
-	cs := bits.Checksum(ident.Bytes(), 2)
+	cs, err := bits.Checksum(ident.Bytes(), 2)
+	if err != nil {
+		return nil, errors.New("address.NewAddress: Error generating checksum: " + err.Error())
+	}
 	ident.Write(cs)
 
 	ident58, err := base58.Encode(ident.Bytes())
@@ -75,7 +78,10 @@ func ValidateChecksum(identifier string) (bool, error) {
 	}
 	ident := raw[:len(raw)-2]
 	cs1 := raw[len(raw)-2:]
-	cs2 := bits.Checksum(ident, 2)
+	cs2, err := bits.Checksum(ident, 2)
+	if err != nil {
+		return false, errors.New("address.ValidateChecksum: Error generating checksum: " + err.Error())
+	}
 
 	return bytes.Compare(cs1, cs2) == 0, nil
 }

@@ -6,7 +6,7 @@ import (
 )
 
 type peer struct {
-	IP        []byte
+	IP        string
 	Port      uint16
 	PublicKey []byte
 	Version   byte
@@ -15,6 +15,15 @@ type peer struct {
 func NewPeer() *peer {
 
 	return new(peer)
+}
+
+func NewPeerFrom(ip string, port uint16) *peer {
+
+	peer := new(peer)
+	peer.IP = ip
+	peer.Port = port
+
+	return peer
 }
 
 func (p *peer) Serialize() ([]byte, error) {
