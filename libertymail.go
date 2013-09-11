@@ -81,7 +81,7 @@ func Connect(peers map[string]net.Conn, addr string) {
 		log.Println("Connect error: " + err.Error())
 	} else {
 		log.Println("Connecting to", conn.RemoteAddr().String())
-		peers[addr] = conn
+		peers[conn.RemoteAddr().String()] = conn
 	}
 }
 
