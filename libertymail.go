@@ -147,10 +147,7 @@ func main() {
 		panic(err)
 	}
 	defer fd.Close()
-
-	w := bufio.NewWriter(fd)
-	log.SetOutput(w)
-	defer w.Flush()
+	log.SetOutput(fd)
 
 	// Temporary map to hold peer connections
 	peers := make(map[string]net.Conn)
@@ -170,8 +167,6 @@ func main() {
 
 L1:
 	for { // Event loop
-
-		w.Flush() // Give those log files a little push
 
 		select {
 		case connection := <-connChan:
