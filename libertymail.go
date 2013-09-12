@@ -21,13 +21,15 @@ func ListenService(port uint16, connChan chan<- net.Conn, closeChan chan bool) {
 
 	laddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if nil != err {
+
 		log.Fatalln("Listen:", err)
 		return
 	}
 
 	listener, err := net.ListenTCP("tcp", laddr)
 	if nil != err {
-		log.Fatalln("Listen:", err)
+
+		log.Fatalln("ListenService:", err)
 		return
 	}
 
@@ -37,10 +39,12 @@ func ListenService(port uint16, connChan chan<- net.Conn, closeChan chan bool) {
 		// Shutdown gracefully if we have a close signal waiting
 		select {
 		case <-closeChan:
+
 			log.Println("Stopping listening on", listener.Addr())
 			listener.Close()
 			closeChan <- true
 			return
+
 		default:
 		}
 
@@ -49,11 +53,15 @@ func ListenService(port uint16, connChan chan<- net.Conn, closeChan chan bool) {
 
 		conn, err := listener.AcceptTCP()
 		if err != nil {
+
 			// Accept returns an error on timeout. If we have a timeout, continue
 			if opErr, ok := err.(*net.OpError); ok && opErr.Timeout() {
+
 				continue
+
 			} else {
-				log.Fatalln("Listen:", err)
+
+				log.Fatalln("ListenService:", err)
 				return
 			}
 		}
@@ -72,8 +80,10 @@ func CommandService(cmdChan chan<- string) {
 		fmt.Print("LM: ")
 
 		line, err := reader.ReadString('\n')
+
 		if err != nil {
-			log.Fatalln("Command:", err)
+
+			log.Fatalln("CommandService:", err)
 			break
 		}
 
@@ -82,9 +92,10 @@ func CommandService(cmdChan chan<- string) {
 		// Send command back to client
 		cmdChan <- cmd
 
-		// If we have a quit command, exit this fiber
+		// If we have a quit command, exit this service
 		if strings.HasPrefix(cmd, "QUIT") {
-			break
+
+			return
 		}
 	}
 }
@@ -92,17 +103,23 @@ func CommandService(cmdChan chan<- string) {
 func Handshake(peers map[string]net.Conn, conn net.Conn, initiate bool) {
 
 	log.Println("Handshaking with", conn.RemoteAddr())
+
 	// FIXME: do handshaking
+
 	peers[conn.RemoteAddr().String()] = conn
 }
 
 func Connect(peers map[string]net.Conn, addr string) bool {
 
 	conn, err := net.Dial("tcp", addr)
+
 	if err != nil {
+
 		log.Println("Connect:", err)
 		return false
+
 	} else {
+
 		log.Println("Connecting to", conn.RemoteAddr())
 		Handshake(peers, conn, true)
 	}
@@ -118,6 +135,7 @@ func main() {
 	flag.Parse()
 
 	if flag.NFlag() < 2 {
+
 		fmt.Println("Usage:", os.Args[0], "-port=... -logfile=...")
 		return
 	}
@@ -125,53 +143,67 @@ func main() {
 	// Setup logfile
 	fd, err := os.Create(*logfile)
 	if err != nil {
+
 		panic(err)
 	}
-	w := bufio.NewWriter(fd)
-	log.SetOutput(w)
 	defer fd.Close()
-	defer w.Flush()
+	log.SetOutput(fd)
 
+	// Temporary map to hold peer connections
 	peers := make(map[string]net.Conn)
 
 	// Start connection service
-	log.Println("Starting connection listener")
+	log.Println("Starting connection service")
 	connChan := make(chan net.Conn)
 	closeChan := make(chan bool)
+
 	go ListenService(uint16(*port), connChan, closeChan)
 
 	// Start command service
-	log.Println("Starting command listener")
+	log.Println("Starting command service")
 	cmdChan := make(chan string)
+
 	go CommandService(cmdChan)
 
 L1:
 	for { // Event loop
-		select {
 
+		select {
 		case connection := <-connChan:
+
 			Handshake(peers, connection, false)
 
 		case command := <-cmdChan:
+
 			log.Printf("Received command %s\n", command)
+
 			if strings.HasPrefix(command, "QUIT") {
+
 				break L1
+
 			} else if strings.HasPrefix(command, "CONNECT") {
+
 				items := strings.Split(command, " ")
+
 				if len(items) > 1 {
+
 					Connect(peers, items[1])
+
 				} else {
+
 					log.Printf("Invalid command: %s", command)
 				}
 			}
 		}
 	}
 
-	log.Println("Shutting down connection listener...")
+	log.Println("Shutting down connection service")
+
 	closeChan <- true
 	<-closeChan
 
 	for k, v := range peers {
+
 		log.Println("Closing peer", k)
 		v.Close()
 	}
