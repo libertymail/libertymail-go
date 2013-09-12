@@ -82,9 +82,9 @@ func CommandService(cmdChan chan<- string) {
 		// Send command back to client
 		cmdChan <- cmd
 
-		// If we have a quit command, exit this fiber
+		// If we have a quit command, exit this service
 		if strings.HasPrefix(cmd, "QUIT") {
-			break
+			return
 		}
 	}
 }
@@ -175,7 +175,7 @@ L1:
 		}
 	}
 
-	log.Println("Shutting down connection listener...")
+	log.Println("Shutting down connection service...")
 
 	closeChan <- true
 	<-closeChan
