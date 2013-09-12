@@ -127,36 +127,44 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	defer fd.Close()
+
 	w := bufio.NewWriter(fd)
 	log.SetOutput(w)
-	defer fd.Close()
 	defer w.Flush()
 
+	// Temporary map to hold peer connections
 	peers := make(map[string]net.Conn)
 
 	// Start connection service
-	log.Println("Starting connection listener")
+	log.Println("Starting connection service")
 	connChan := make(chan net.Conn)
 	closeChan := make(chan bool)
 	go ListenService(uint16(*port), connChan, closeChan)
 
 	// Start command service
-	log.Println("Starting command listener")
+	log.Println("Starting command service")
 	cmdChan := make(chan string)
 	go CommandService(cmdChan)
 
 L1:
 	for { // Event loop
+
+		w.Flush() // Give those log files a little push
+
 		select {
 
 		case connection := <-connChan:
-			Handshake(peers, connection, false)
 
+			Handshake(peers, connection, false)
 		case command := <-cmdChan:
+
 			log.Printf("Received command %s\n", command)
+
 			if strings.HasPrefix(command, "QUIT") {
 				break L1
 			} else if strings.HasPrefix(command, "CONNECT") {
+
 				items := strings.Split(command, " ")
 				if len(items) > 1 {
 					Connect(peers, items[1])
@@ -168,6 +176,7 @@ L1:
 	}
 
 	log.Println("Shutting down connection listener...")
+
 	closeChan <- true
 	<-closeChan
 
