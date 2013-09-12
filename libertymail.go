@@ -17,7 +17,7 @@ import (
 	//"libertymail-go/proto"
 )
 
-func Listen(port uint16, connChan chan<- net.Conn, closeChan chan bool) {
+func ListenService(port uint16, connChan chan<- net.Conn, closeChan chan bool) {
 
 	laddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if nil != err {
@@ -63,8 +63,9 @@ func Listen(port uint16, connChan chan<- net.Conn, closeChan chan bool) {
 	}
 }
 
-func Command(cmdChan chan<- string) {
+func CommandService(cmdChan chan<- string) {
 
+	// Read commands from stdin
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
@@ -133,16 +134,16 @@ func main() {
 
 	peers := make(map[string]net.Conn)
 
-	// Start connection listener
+	// Start connection service
 	log.Println("Starting connection listener")
 	connChan := make(chan net.Conn)
 	closeChan := make(chan bool)
-	go Listen(uint16(*port), connChan, closeChan)
+	go ListenService(uint16(*port), connChan, closeChan)
 
-	// Start command listener
+	// Start command service
 	log.Println("Starting command listener")
 	cmdChan := make(chan string)
-	go Command(cmdChan)
+	go CommandService(cmdChan)
 
 L1:
 	for { // Event loop
