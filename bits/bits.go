@@ -6,7 +6,9 @@ package bits
 
 import (
 	"crypto/sha256"
+	"crypto/rand"
 	"errors"
+	"io"
 
 	"libertymail-go/ripemd160"
 )
@@ -29,6 +31,16 @@ func Checksum(p []byte, n int) ([]byte, error) {
 	}
 
 	return check, nil
+}
+
+/* Generates a block of 192 random bits */
+func GenerateRandomBlock() ([]byte, error) {
+	b := make([]byte, 24)
+	_, err := io.ReadFull(rand.Reader, b)
+	if len(b) != 24 || err != nil {
+		b = nil
+	}
+	return b, err
 }
 
 func SHA256(p []byte) []byte {
