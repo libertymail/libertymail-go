@@ -24,7 +24,6 @@ func main() {
 	flag.Parse()
 
 	if flag.NFlag() < 2 {
-
 		fmt.Println("Usage:", os.Args[0], "-port=... -logfile=...")
 		return
 	}
