@@ -39,7 +39,7 @@ func Checksum(p []byte, n int) ([]byte, error) {
 func GenerateRandomBlock() ([]byte, error) {
 	b := make([]byte, 24)
 	_, err := io.ReadFull(rand.Reader, b)
-	if len(b) != 24 || err != nil {
+	if err != nil {
 		b = nil
 	}
 	return b, err
