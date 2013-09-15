@@ -11,9 +11,15 @@ import (
 	"time"
 )
 
-func Listen(port uint16, connChan chan<- net.Conn, closeChan chan bool) {
+type ListenService struct {
+	Port           uint16
+	ConnectionChan chan net.Conn
+	CloseChan      chan bool
+}
 
-	laddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+func (ls *ListenService) Run() {
+
+	laddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("127.0.0.1:%d", ls.Port))
 	if nil != err {
 
 		log.Fatalln("grid.Listen:", err)
@@ -32,11 +38,11 @@ func Listen(port uint16, connChan chan<- net.Conn, closeChan chan bool) {
 	for {
 		// Shutdown gracefully if we have a close signal waiting
 		select {
-		case <-closeChan:
+		case <-ls.CloseChan:
 
-			log.Println("Stopping listening on", listener.Addr())
+			log.Println("Stopping listen service on", listener.Addr())
 			listener.Close()
-			closeChan <- true
+			ls.CloseChan <- true
 			return
 
 		default:
@@ -55,39 +61,116 @@ func Listen(port uint16, connChan chan<- net.Conn, closeChan chan bool) {
 
 			} else {
 
-				log.Fatalln("grid.Listen:", err)
+				log.Fatalln("grid.ListenService:", err)
 				return
 			}
 		}
 
 		// Send connection back to client
-		connChan <- conn
+		ls.ConnectionChan <- conn
 	}
 }
 
-func Handshake(peers map[string]net.Conn, conn net.Conn, initiate bool) {
+func (ls *ListenService) Close() {
 
-	log.Println("Handshaking with", conn.RemoteAddr())
-
-	// FIXME: do handshaking
-
-	peers[conn.RemoteAddr().String()] = conn
+	ls.CloseChan <- true
+	<-ls.CloseChan
 }
 
-func Connect(peers map[string]net.Conn, addr string) bool {
+type ConnectService struct {
+	AddressChan    chan string
+	ConnectionChan chan net.Conn
+	CloseChan      chan bool
+}
 
-	conn, err := net.Dial("tcp", addr)
+func (cs *ConnectService) Run() {
 
-	if err != nil {
+	for {
+		select {
 
-		log.Println("Connect:", err)
-		return false
+		case <-cs.CloseChan:
 
-	} else {
+			log.Println("Stopping connection service")
+			cs.CloseChan <- true
+			return
 
-		log.Println("Connecting to", conn.RemoteAddr())
-		Handshake(peers, conn, true)
+		case addr := <-cs.AddressChan:
+
+			conn, err := net.Dial("tcp", addr)
+
+			if err != nil {
+				log.Println("grid.ConnectService:", err)
+			} else {
+				cs.ConnectionChan <- conn
+			}
+		}
 	}
+}
 
-	return true
+func (cs *ConnectService) Close() {
+
+	cs.CloseChan <- true
+	<-cs.CloseChan
+}
+
+type HandshakeService struct {
+	ConnectionChan chan net.Conn
+	CloseChan      chan bool
+}
+
+func (hs *HandshakeService) Run() {
+
+	for {
+		select {
+
+		case <-hs.CloseChan:
+
+			log.Println("Stopping handshake service")
+			hs.CloseChan <- true
+			return
+
+		case connection := <-hs.ConnectionChan:
+
+			log.Println("Doing handshake with", connection.RemoteAddr())
+			// TODO: Handshaking
+			hs.ConnectionChan <- connection
+		}
+	}
+}
+
+func (hs *HandshakeService) Close() {
+
+	hs.CloseChan <- true
+	<-hs.CloseChan
+}
+
+type InitiateHandshakeService struct {
+	ConnectionChan chan net.Conn
+	CloseChan      chan bool
+}
+
+func (ihs *InitiateHandshakeService) Run() {
+
+	for {
+		select {
+
+		case <-ihs.CloseChan:
+
+			log.Println("Stopping initiate handshake service")
+			ihs.CloseChan <- true
+			return
+
+		case connection := <-ihs.ConnectionChan:
+
+			log.Println("Initiating handshake with", connection.RemoteAddr())
+			// TODO: Handshaking
+			ihs.ConnectionChan <- connection
+		}
+	}
+}
+
+func (ihs *InitiateHandshakeService) Close() {
+
+	ihs.CloseChan <- true
+	<-ihs.CloseChan
 }

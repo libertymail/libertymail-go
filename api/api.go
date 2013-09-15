@@ -12,7 +12,11 @@ import (
 	"strings"
 )
 
-func Console(cmdChan chan<- string) {
+type ConsoleService struct {
+	CommandChan chan string
+}
+
+func (cs *ConsoleService) Run() {
 
 	// Read commands from stdin
 	reader := bufio.NewReader(os.Stdin)
@@ -31,7 +35,7 @@ func Console(cmdChan chan<- string) {
 		cmd := strings.ToUpper(strings.Trim(line, "\n\r\t "))
 
 		// Send command back to client
-		cmdChan <- cmd
+		cs.CommandChan <- cmd
 
 		// If we have a quit command, exit this service
 		if strings.HasPrefix(cmd, "QUIT") {

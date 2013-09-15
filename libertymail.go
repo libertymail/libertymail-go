@@ -40,28 +40,36 @@ func main() {
 	// Temporary map to hold peer connections
 	peers := make(map[string]net.Conn)
 
-	// Start connection service
-	log.Println("Starting connection service")
-	connChan := make(chan net.Conn)
-	closeChan := make(chan bool)
-
-	go grid.Listen(uint16(*port), connChan, closeChan)
-
 	// Start command service
 	log.Println("Starting command service")
-	cmdChan := make(chan string)
+	consoleService := &api.ConsoleService{make(chan string)}
+	go consoleService.Run()
 
-	go api.Console(cmdChan)
+	// Start listen service
+	log.Println("Starting listen service")
+	listenService := &grid.ListenService{uint16(*port), make(chan net.Conn), make(chan bool)}
+	go listenService.Run()
+
+	// Start connect service
+	log.Println("Starting connect service")
+	connectService := &grid.ConnectService{make(chan string), make(chan net.Conn), make(chan bool)}
+	go connectService.Run()
+
+	// Start handshake service
+	log.Println("Starting handshake service")
+	handshakeService := &grid.HandshakeService{make(chan net.Conn), make(chan bool)}
+	go handshakeService.Run()
+
+	// Start initiate handshake service
+	log.Println("Starting initiate handshake service")
+	initiateHandshakeService := &grid.InitiateHandshakeService{make(chan net.Conn), make(chan bool)}
+	go initiateHandshakeService.Run()
 
 L1:
 	for { // Event loop
 
 		select {
-		case connection := <-connChan:
-
-			grid.Handshake(peers, connection, false)
-
-		case command := <-cmdChan:
+		case command := <-consoleService.CommandChan:
 
 			log.Printf("Received command %s\n", command)
 
@@ -72,29 +80,51 @@ L1:
 			} else if strings.HasPrefix(command, "CONNECT") {
 
 				items := strings.Split(command, " ")
-
 				if len(items) > 1 {
 
-					grid.Connect(peers, items[1])
+					connectService.AddressChan <- items[1]
 
 				} else {
 
 					log.Printf("Invalid command: %s", command)
 				}
+			} else if strings.HasPrefix(command, "LIST") {
+
+				log.Println("Connected peers:")
+				for k, _ := range peers {
+
+					log.Println(k)
+				}
 			}
+
+		case connection := <-listenService.ConnectionChan:
+
+			handshakeService.ConnectionChan <- connection
+
+		case connection := <-handshakeService.ConnectionChan:
+
+			peers[connection.RemoteAddr().String()] = connection
+			//db.RegisterPeer(connection)
+
+		case connection := <-connectService.ConnectionChan:
+
+			initiateHandshakeService.ConnectionChan <- connection
+
+		case connection := <-initiateHandshakeService.ConnectionChan:
+
+			peers[connection.RemoteAddr().String()] = connection
+			//db.RegisterPeer(connection)
 		}
 	}
 
-	log.Println("Shutting down connection service")
-
-	closeChan <- true
-	<-closeChan
+	listenService.Close()
+	connectService.Close()
+	handshakeService.Close()
+	initiateHandshakeService.Close()
 
 	for k, v := range peers {
 
 		log.Println("Closing peer", k)
 		v.Close()
 	}
-
-	log.Println("Done.")
 }
