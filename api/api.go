@@ -18,6 +18,8 @@ type ConsoleService struct {
 
 func (cs *ConsoleService) Run() {
 
+	log.Println("Starting command service")
+
 	// Read commands from stdin
 	reader := bufio.NewReader(os.Stdin)
 

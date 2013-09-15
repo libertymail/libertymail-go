@@ -8,28 +8,35 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"sync"
 	"time"
 )
 
 type ListenService struct {
 	Port           uint16
 	ConnectionChan chan net.Conn
-	CloseChan      chan bool
+	CloseChan      chan struct{}
+	ServiceGroup   *sync.WaitGroup
 }
 
 func (ls *ListenService) Run() {
 
+	log.Println("Starting listen service")
+
+	ls.ServiceGroup.Add(1)
+	defer ls.ServiceGroup.Done()
+
 	laddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("127.0.0.1:%d", ls.Port))
 	if nil != err {
 
-		log.Fatalln("grid.Listen:", err)
+		log.Fatalln("grid.ListenService.Run:", err)
 		return
 	}
 
 	listener, err := net.ListenTCP("tcp", laddr)
 	if nil != err {
 
-		log.Fatalln("grid.Listen:", err)
+		log.Fatalln("grid.ListenService.Run:", err)
 		return
 	}
 
@@ -40,9 +47,7 @@ func (ls *ListenService) Run() {
 		select {
 		case <-ls.CloseChan:
 
-			log.Println("Stopping listen service on", listener.Addr())
 			listener.Close()
-			ls.CloseChan <- true
 			return
 
 		default:
@@ -61,7 +66,7 @@ func (ls *ListenService) Run() {
 
 			} else {
 
-				log.Fatalln("grid.ListenService:", err)
+				log.Fatalln("grid.ListenService.Run:", err)
 				return
 			}
 		}
@@ -71,27 +76,25 @@ func (ls *ListenService) Run() {
 	}
 }
 
-func (ls *ListenService) Close() {
-
-	ls.CloseChan <- true
-	<-ls.CloseChan
-}
-
 type ConnectService struct {
 	AddressChan    chan string
 	ConnectionChan chan net.Conn
-	CloseChan      chan bool
+	CloseChan      chan struct{}
+	ServiceGroup   *sync.WaitGroup
 }
 
 func (cs *ConnectService) Run() {
+
+	log.Println("Starting connect service")
+
+	cs.ServiceGroup.Add(1)
+	defer cs.ServiceGroup.Done()
 
 	for {
 		select {
 
 		case <-cs.CloseChan:
 
-			log.Println("Stopping connection service")
-			cs.CloseChan <- true
 			return
 
 		case addr := <-cs.AddressChan:
@@ -99,34 +102,35 @@ func (cs *ConnectService) Run() {
 			conn, err := net.Dial("tcp", addr)
 
 			if err != nil {
-				log.Println("grid.ConnectService:", err)
+
+				log.Println("grid.ConnectService.Run:", err)
+
 			} else {
+
 				cs.ConnectionChan <- conn
 			}
 		}
 	}
 }
 
-func (cs *ConnectService) Close() {
-
-	cs.CloseChan <- true
-	<-cs.CloseChan
-}
-
 type HandshakeService struct {
 	ConnectionChan chan net.Conn
-	CloseChan      chan bool
+	CloseChan      chan struct{}
+	ServiceGroup   *sync.WaitGroup
 }
 
 func (hs *HandshakeService) Run() {
+
+	log.Println("Starting handshake service")
+
+	hs.ServiceGroup.Add(1)
+	defer hs.ServiceGroup.Done()
 
 	for {
 		select {
 
 		case <-hs.CloseChan:
 
-			log.Println("Stopping handshake service")
-			hs.CloseChan <- true
 			return
 
 		case connection := <-hs.ConnectionChan:
@@ -138,26 +142,24 @@ func (hs *HandshakeService) Run() {
 	}
 }
 
-func (hs *HandshakeService) Close() {
-
-	hs.CloseChan <- true
-	<-hs.CloseChan
-}
-
 type InitiateHandshakeService struct {
 	ConnectionChan chan net.Conn
-	CloseChan      chan bool
+	CloseChan      chan struct{}
+	ServiceGroup   *sync.WaitGroup
 }
 
 func (ihs *InitiateHandshakeService) Run() {
+
+	log.Println("Starting initiate handshake service")
+
+	ihs.ServiceGroup.Add(1)
+	defer ihs.ServiceGroup.Done()
 
 	for {
 		select {
 
 		case <-ihs.CloseChan:
 
-			log.Println("Stopping initiate handshake service")
-			ihs.CloseChan <- true
 			return
 
 		case connection := <-ihs.ConnectionChan:
@@ -167,10 +169,4 @@ func (ihs *InitiateHandshakeService) Run() {
 			ihs.ConnectionChan <- connection
 		}
 	}
-}
-
-func (ihs *InitiateHandshakeService) Close() {
-
-	ihs.CloseChan <- true
-	<-ihs.CloseChan
 }

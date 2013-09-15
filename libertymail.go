@@ -11,6 +11,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync"
 
 	"libertymail-go/api"
 	"libertymail-go/grid"
@@ -40,29 +41,27 @@ func main() {
 	// Temporary map to hold peer connections
 	peers := make(map[string]net.Conn)
 
+	// WaitGroup to synchronize service shutdown
+	serviceGroup := &sync.WaitGroup{}
+
 	// Start command service
-	log.Println("Starting command service")
 	consoleService := &api.ConsoleService{make(chan string)}
 	go consoleService.Run()
 
 	// Start listen service
-	log.Println("Starting listen service")
-	listenService := &grid.ListenService{uint16(*port), make(chan net.Conn), make(chan bool)}
+	listenService := &grid.ListenService{uint16(*port), make(chan net.Conn), make(chan struct{}), serviceGroup}
 	go listenService.Run()
 
 	// Start connect service
-	log.Println("Starting connect service")
-	connectService := &grid.ConnectService{make(chan string), make(chan net.Conn), make(chan bool)}
+	connectService := &grid.ConnectService{make(chan string), make(chan net.Conn), make(chan struct{}), serviceGroup}
 	go connectService.Run()
 
 	// Start handshake service
-	log.Println("Starting handshake service")
-	handshakeService := &grid.HandshakeService{make(chan net.Conn), make(chan bool)}
+	handshakeService := &grid.HandshakeService{make(chan net.Conn), make(chan struct{}), serviceGroup}
 	go handshakeService.Run()
 
 	// Start initiate handshake service
-	log.Println("Starting initiate handshake service")
-	initiateHandshakeService := &grid.InitiateHandshakeService{make(chan net.Conn), make(chan bool)}
+	initiateHandshakeService := &grid.InitiateHandshakeService{make(chan net.Conn), make(chan struct{}), serviceGroup}
 	go initiateHandshakeService.Run()
 
 L1:
@@ -117,10 +116,14 @@ L1:
 		}
 	}
 
-	listenService.Close()
-	connectService.Close()
-	handshakeService.Close()
-	initiateHandshakeService.Close()
+	log.Println("Stopping services")
+
+	close(listenService.CloseChan)
+	close(connectService.CloseChan)
+	close(handshakeService.CloseChan)
+	close(initiateHandshakeService.CloseChan)
+
+	serviceGroup.Wait()
 
 	for k, v := range peers {
 
