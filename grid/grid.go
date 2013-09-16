@@ -16,15 +16,14 @@ type ListenService struct {
 	Port           uint16
 	ConnectionChan chan net.Conn
 	CloseChan      chan struct{}
-	ServiceGroup   *sync.WaitGroup
 }
 
-func (ls *ListenService) Run() {
+func (ls *ListenService) Run(serviceGroup *sync.WaitGroup) {
 
 	log.Println("Starting listen service")
 
-	ls.ServiceGroup.Add(1)
-	defer ls.ServiceGroup.Done()
+	serviceGroup.Add(1)
+	defer serviceGroup.Done()
 
 	laddr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("127.0.0.1:%d", ls.Port))
 	if nil != err {
@@ -76,97 +75,94 @@ func (ls *ListenService) Run() {
 	}
 }
 
+func (ls *ListenService) Close() {
+	close(ls.CloseChan)
+}
+
 type ConnectService struct {
 	AddressChan    chan string
 	ConnectionChan chan net.Conn
-	CloseChan      chan struct{}
-	ServiceGroup   *sync.WaitGroup
 }
 
-func (cs *ConnectService) Run() {
+func (cs *ConnectService) Run(serviceGroup *sync.WaitGroup) {
 
 	log.Println("Starting connect service")
 
-	cs.ServiceGroup.Add(1)
-	defer cs.ServiceGroup.Done()
+	serviceGroup.Add(1)
+	defer serviceGroup.Done()
 
 	for {
-		select {
+		addr, ok := <-cs.AddressChan
 
-		case <-cs.CloseChan:
+		if !ok { return }
 
-			return
+		conn, err := net.Dial("tcp", addr)
 
-		case addr := <-cs.AddressChan:
+		if err != nil {
 
-			conn, err := net.Dial("tcp", addr)
+			log.Println("grid.ConnectService.Run:", err)
 
-			if err != nil {
+		} else {
 
-				log.Println("grid.ConnectService.Run:", err)
-
-			} else {
-
-				cs.ConnectionChan <- conn
-			}
+			cs.ConnectionChan <- conn
 		}
 	}
+}
+
+func (cs *ConnectService) Close() {
+	close(cs.AddressChan)
 }
 
 type HandshakeService struct {
 	ConnectionChan chan net.Conn
-	CloseChan      chan struct{}
-	ServiceGroup   *sync.WaitGroup
 }
 
-func (hs *HandshakeService) Run() {
+func (hs *HandshakeService) Run(serviceGroup *sync.WaitGroup) {
 
 	log.Println("Starting handshake service")
 
-	hs.ServiceGroup.Add(1)
-	defer hs.ServiceGroup.Done()
+	serviceGroup.Add(1)
+	defer serviceGroup.Done()
 
 	for {
-		select {
+		connection, ok := <-hs.ConnectionChan
 
-		case <-hs.CloseChan:
+		if !ok { return }
 
-			return
+		log.Println("Doing handshake with", connection.RemoteAddr())
+		// TODO: Handshaking
 
-		case connection := <-hs.ConnectionChan:
-
-			log.Println("Doing handshake with", connection.RemoteAddr())
-			// TODO: Handshaking
-			hs.ConnectionChan <- connection
-		}
+		hs.ConnectionChan <- connection
 	}
+}
+
+func (hs *HandshakeService) Close() {
+	close(hs.ConnectionChan)
 }
 
 type InitiateHandshakeService struct {
 	ConnectionChan chan net.Conn
-	CloseChan      chan struct{}
-	ServiceGroup   *sync.WaitGroup
 }
 
-func (ihs *InitiateHandshakeService) Run() {
+func (ihs *InitiateHandshakeService) Run(serviceGroup *sync.WaitGroup) {
 
 	log.Println("Starting initiate handshake service")
 
-	ihs.ServiceGroup.Add(1)
-	defer ihs.ServiceGroup.Done()
+	serviceGroup.Add(1)
+	defer serviceGroup.Done()
 
 	for {
-		select {
+		connection, ok := <-ihs.ConnectionChan
 
-		case <-ihs.CloseChan:
+		if !ok { return }
 
-			return
+		log.Println("Initiating handshake with", connection.RemoteAddr())
+		// TODO: Handshaking
 
-		case connection := <-ihs.ConnectionChan:
-
-			log.Println("Initiating handshake with", connection.RemoteAddr())
-			// TODO: Handshaking
-			ihs.ConnectionChan <- connection
-		}
+		ihs.ConnectionChan <- connection
 	}
+}
+
+func (ihs *InitiateHandshakeService) Close() {
+	close(ihs.ConnectionChan)
 }

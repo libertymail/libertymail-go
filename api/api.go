@@ -15,15 +15,14 @@ import (
 
 type ConsoleService struct {
 	CommandChan chan string
-	ServiceGroup *sync.WaitGroup
 }
 
-func (cs *ConsoleService) Run() {
+func (cs *ConsoleService) Run(serviceGroup *sync.WaitGroup) {
 
 	log.Println("Starting command service")
 
-	cs.ServiceGroup.Add(1)
-	defer cs.ServiceGroup.Done()
+	serviceGroup.Add(1)
+	defer serviceGroup.Done()
 
 	// Read commands from stdin
 	reader := bufio.NewReader(os.Stdin)
