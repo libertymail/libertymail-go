@@ -45,7 +45,7 @@ func main() {
 	serviceGroup := &sync.WaitGroup{}
 
 	// Start command service
-	consoleService := &api.ConsoleService{make(chan string)}
+	consoleService := &api.ConsoleService{make(chan string), serviceGroup}
 	go consoleService.Run()
 
 	// Start listen service
