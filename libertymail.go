@@ -46,23 +46,23 @@ func main() {
 
 	// Start command service
 	consoleService := &api.ConsoleService{make(chan string)}
-	go consoleService.Run()
+	go consoleService.Run(serviceGroup)
 
 	// Start listen service
-	listenService := &grid.ListenService{uint16(*port), make(chan net.Conn), make(chan struct{}), serviceGroup}
-	go listenService.Run()
+	listenService := &grid.ListenService{uint16(*port), make(chan net.Conn), make(chan struct{})}
+	go listenService.Run(serviceGroup)
 
 	// Start connect service
-	connectService := &grid.ConnectService{make(chan string), make(chan net.Conn), make(chan struct{}), serviceGroup}
-	go connectService.Run()
+	connectService := &grid.ConnectService{make(chan string), make(chan net.Conn)}
+	go connectService.Run(serviceGroup)
 
 	// Start handshake service
-	handshakeService := &grid.HandshakeService{make(chan net.Conn), make(chan struct{}), serviceGroup}
-	go handshakeService.Run()
+	handshakeService := &grid.HandshakeService{make(chan net.Conn)}
+	go handshakeService.Run(serviceGroup)
 
 	// Start initiate handshake service
-	initiateHandshakeService := &grid.InitiateHandshakeService{make(chan net.Conn), make(chan struct{}), serviceGroup}
-	go initiateHandshakeService.Run()
+	initiateHandshakeService := &grid.InitiateHandshakeService{make(chan net.Conn)}
+	go initiateHandshakeService.Run(serviceGroup)
 
 L1:
 	for { // Event loop
@@ -118,10 +118,10 @@ L1:
 
 	log.Println("Stopping services")
 
-	close(listenService.CloseChan)
-	close(connectService.CloseChan)
-	close(handshakeService.CloseChan)
-	close(initiateHandshakeService.CloseChan)
+	listenService.Close()
+	connectService.Close()
+	handshakeService.Close()
+	initiateHandshakeService.Close()
 
 	serviceGroup.Wait()
 
