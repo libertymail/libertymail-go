@@ -1,17 +1,17 @@
 #!/bin/bash
 
-go test -i libertymail-go/ripemd160
+go test -i libertymail-go/bits/ripemd160
+go test -i libertymail-go/bits/base58
 go test -i libertymail-go/bits
-go test -i libertymail-go/base58
-go test -i libertymail-go/address
+go test -i libertymail-go/proto/address
 #go test -i libertymail-go/proto
 go test -i libertymail-go/grid
 go test -i libertymail-go/api
 
-go test libertymail-go/ripemd160
+go test libertymail-go/bits/ripemd160
+go test libertymail-go/bits/base58
 go test libertymail-go/bits
-go test libertymail-go/base58
-go test libertymail-go/address
+go test libertymail-go/proto/address
 #go test libertymail-go/proto
 go test libertymail-go/grid
 go test libertymail-go/api

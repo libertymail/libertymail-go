@@ -12,8 +12,8 @@ import (
 	"errors"
 	"strings"
 
-	"libertymail-go/base58"
 	"libertymail-go/bits"
+	"libertymail-go/bits/base58"
 )
 
 type address struct {
