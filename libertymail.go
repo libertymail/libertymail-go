@@ -32,12 +32,12 @@ func main() {
 	}
 
 	// Setup logfile
-	fd, err := os.Create(*logfile)
+	logfd, err := os.Create(*logfile)
 	if err != nil {
 		panic(err)
 	}
-	defer fd.Close()
-	log.SetOutput(fd)
+	defer logfd.Close()
+	log.SetOutput(logfd)
 
 	// Temporary map to hold peer connections
 	peers := make(map[string]net.Conn)
@@ -47,8 +47,7 @@ func main() {
 
 	// Open databases
 	db := store.NewStore("./private.db", "./public.db")
-	err = db.Open()
-	if err != nil {
+	if err = db.Open(); err != nil {
 		panic(err)
 	}
 	defer db.Close()

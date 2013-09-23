@@ -27,23 +27,19 @@ func (s *store) Open() error {
 	var err error
 	privdb, pubdb := true, true
 
-	_, err = os.Stat(s.privFile)
-	if err != nil {
+	if _, err = os.Stat(s.privFile); err != nil {
 		privdb = false
 	}
 
-	_, err = os.Stat(s.pubFile)
-	if err != nil {
+	if _, err = os.Stat(s.pubFile); err != nil {
 		pubdb = false
 	}
 
-	s.priv, err = sql.Open("sqlite3", s.privFile)
-	if err != nil {
+	if s.priv, err = sql.Open("sqlite3", s.privFile); err != nil {
 		return err
 	}
 
-	s.pub, err = sql.Open("sqlite3", s.pubFile)
-	if err != nil {
+	if s.pub, err = sql.Open("sqlite3", s.pubFile); err != nil {
 		return err
 	}
 
@@ -52,8 +48,7 @@ func (s *store) Open() error {
     	create table addresses (version integer, privacy integer, identifier text, wif text); 
     	delete from addresses;
 		`
-		_, err = s.priv.Exec(sql)
-		if err != nil {
+		if _, err = s.priv.Exec(sql); err != nil {
 			return err
 		}
 	}
@@ -63,8 +58,7 @@ func (s *store) Open() error {
     	create table pubkeys (key blob); 
     	delete from pubkeys;
 		`
-		_, err = s.pub.Exec(sql)
-		if err != nil {
+		if _, err = s.pub.Exec(sql); err != nil {
 			return err
 		}
 	}
