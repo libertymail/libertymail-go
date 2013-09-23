@@ -5,9 +5,9 @@ go test -i libertymail-go/bits/hashing
 go test -i libertymail-go/bits/base58
 go test -i libertymail-go/bits/random
 go test -i libertymail-go/bits/crypt
+go test -i libertymail-go/bits/wif
 go test -i libertymail-go/bits
-go test -i libertymail-go/proto/address
-#go test -i libertymail-go/proto
+go test -i libertymail-go/proto
 go test -i libertymail-go/grid
 go test -i libertymail-go/api
 
@@ -16,8 +16,8 @@ go test libertymail-go/bits/hashing
 go test libertymail-go/bits/base58
 go test libertymail-go/bits/random
 go test libertymail-go/bits/crypt
+go test libertymail-go/bits/wif
 go test libertymail-go/bits
-go test libertymail-go/proto/address
-#go test libertymail-go/proto
+go test libertymail-go/proto
 go test libertymail-go/grid
 go test libertymail-go/api

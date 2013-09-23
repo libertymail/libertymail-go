@@ -2,7 +2,7 @@
 // CONTRIBUTORS AND COPYRIGHT HOLDERS (c) 2013:
 // Dag Robøle (go.libremail AT gmail DOT com)
 
-package address
+package proto
 
 import (
 	"bytes"
@@ -16,16 +16,16 @@ import (
 	"libertymail-go/bits/base58"
 )
 
-type address struct {
+type Address struct {
 	Version, Privacy byte
 	Identifier       string
 	Key              *ecdsa.PrivateKey
 }
 
-func NewAddress(version, privacy byte) (*address, error) {
+func NewAddress(version, privacy byte) (*Address, error) {
 
 	var err error
-	addr := new(address)
+	addr := new(Address)
 	addr.Key, err = ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	if err != nil {
 		return nil, errors.New("address.NewAddress: Error generating ecdsa keys: " + err.Error())
