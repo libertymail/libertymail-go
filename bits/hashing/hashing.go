@@ -7,7 +7,7 @@ package hashing
 import (
 	"crypto/sha256"
 
-	"libertymail-go/bits/ripemd160"
+	"libertymail-go/bits/hashing/ripemd160"
 )
 
 func SHA256(p []byte) []byte {
