@@ -15,6 +15,8 @@ import (
 
 	"libertymail-go/api"
 	"libertymail-go/grid"
+	"libertymail-go/proto"
+	"libertymail-go/store"
 )
 
 func main() {
@@ -30,19 +32,31 @@ func main() {
 	}
 
 	// Setup logfile
-	fd, err := os.Create(*logfile)
+	logfd, err := os.Create(*logfile)
 	if err != nil {
-
 		panic(err)
 	}
-	defer fd.Close()
-	log.SetOutput(fd)
+	defer logfd.Close()
+	log.SetOutput(logfd)
 
 	// Temporary map to hold peer connections
 	peers := make(map[string]net.Conn)
 
 	// WaitGroup to synchronize service shutdown
 	serviceGroup := &sync.WaitGroup{}
+
+	// Open databases
+	db := store.NewStore("./private.db", "./public.db")
+	if err = db.Open(); err != nil {
+		panic(err)
+	}
+	defer db.Close()
+
+	addr1, err := proto.NewAddress(1, 0)
+	if err != nil {
+		panic(err)
+	}
+	db.SaveAddress(addr1)
 
 	// Start command service
 	consoleService := &api.ConsoleService{make(chan string)}

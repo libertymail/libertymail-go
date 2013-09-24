@@ -1,4 +1,4 @@
-package address
+package proto
 
 import (
 	"testing"
@@ -22,5 +22,12 @@ func TestAddress(t *testing.T) {
 
 	if valid != true {
 		t.Error("Invalid checksum")
+	}
+}
+
+func TestProto(t *testing.T) {
+
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
 	}
 }

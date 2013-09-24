@@ -5,29 +5,31 @@ import (
 //"errors"
 )
 
-type peer struct {
+type Peer struct {
 	IP        string
 	Port      uint16
 	PublicKey []byte
 	Version   byte
 }
 
-func NewPeer() *peer {
+func NewPeer() *Peer {
 
-	return new(peer)
+	return new(Peer)
 }
 
-func NewPeerFrom(ip string, port uint16) *peer {
+func NewPeerFrom(ip string, port uint16) *Peer {
 
-	peer := new(peer)
+	peer := new(Peer)
 	peer.IP = ip
 	peer.Port = port
 
 	return peer
 }
 
-func (p *peer) Serialize() ([]byte, error) {
+func (p *Peer) Serialize() ([]byte, error) {
+	return nil, nil
 }
 
-func (p *peer) Deserialize(packet []byte) error {
+func (p *Peer) Deserialize(packet []byte) error {
+	return nil
 }
