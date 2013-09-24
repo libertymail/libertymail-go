@@ -5,12 +5,12 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"net"
 	"os"
-	"strings"
 	"sync"
 
 	"libertymail-go/api"
@@ -58,9 +58,9 @@ func main() {
 	}
 	db.SaveAddress(addr1)
 
-	// Start command service
-	consoleService := &api.ConsoleService{make(chan string)}
-	go consoleService.Run(serviceGroup)
+	// Start console service
+	apiService := &api.JsonService{make(chan string)}
+	go apiService.Run(serviceGroup)
 
 	// Start listen service
 	listenService := &grid.ListenService{uint16(*port), make(chan net.Conn), make(chan struct{})}
@@ -78,36 +78,49 @@ func main() {
 	initiateHandshakeService := &grid.InitiateHandshakeService{make(chan net.Conn)}
 	go initiateHandshakeService.Run(serviceGroup)
 
+	var cmd api.Command
 L1:
 	for { // Event loop
 
 		select {
-		case command := <-consoleService.CommandChan:
+		case request := <-apiService.StreamChan:
 
-			log.Printf("Received command %s\n", command)
+			if err := json.Unmarshal([]byte(request), &cmd); err != nil {
+				log.Println(err)
+				continue
+			}
 
-			if strings.HasPrefix(command, "QUIT") {
+			log.Println("Received command", cmd.Name)
+
+			switch cmd.Name {
+			case "quit":
 
 				break L1
 
-			} else if strings.HasPrefix(command, "CONNECT") {
+			case "connect":
 
-				items := strings.Split(command, " ")
-				if len(items) > 1 {
+				connectService.AddressChan <- cmd.Args[0]
 
-					connectService.AddressChan <- items[1]
+			case "list":
 
-				} else {
+				switch cmd.Args[0] {
 
-					log.Printf("Invalid command: %s", command)
+				case "peers":
+
+					reply := ""
+					for k, _ := range peers {
+						reply += k + "\n"
+					}
+					apiService.StreamChan <- reply
+
+				case "addresses":
+
+					apiService.StreamChan <- "LM:blahblahblah\nLM:blahblahblah\n"
+
+				default:
 				}
-			} else if strings.HasPrefix(command, "LIST") {
 
-				log.Println("Connected peers:")
-				for k, _ := range peers {
-
-					log.Println(k)
-				}
+			default:
 			}
 
 		case connection := <-listenService.ConnectionChan:

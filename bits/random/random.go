@@ -11,10 +11,22 @@ import (
 
 /* Generates a block of random bits */
 func Bytes(size int) ([]byte, error) {
+
 	b := make([]byte, size)
 	_, err := io.ReadFull(rand.Reader, b)
 	if err != nil {
 		b = nil
 	}
+
 	return b, err
+}
+
+func Entropy192() ([]byte, error) {
+
+	b, err := Bytes(24)
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
 }

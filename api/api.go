@@ -6,6 +6,7 @@ package api
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -13,39 +14,104 @@ import (
 	"sync"
 )
 
-type ConsoleService struct {
-	CommandChan chan string
+/* Json API examples
+
+{"Name":"connect","Args":["127.0.0.1:30000"]}
+{"Name":"quit","Args":null}
+{"Name":"list","Args":["addresses","peers"]}
+
+*/
+
+type Command struct {
+	Name string
+	Args []string
 }
 
-func (cs *ConsoleService) Run(serviceGroup *sync.WaitGroup) {
+func NewCommand(name string) *Command {
 
-	log.Println("Starting command service")
+	c := new(Command)
+	c.Name = name
+
+	return c
+}
+
+func (c *Command) Arg(p string) *Command {
+
+	c.Args = append(c.Args, p)
+
+	return c
+}
+
+func (c *Command) String() string {
+
+	b, _ := json.Marshal(c)
+	return string(b)
+}
+
+type JsonService struct {
+	StreamChan chan string
+}
+
+func (js *JsonService) Run(serviceGroup *sync.WaitGroup) {
+
+	log.Println("Starting Json service")
 
 	serviceGroup.Add(1)
 	defer serviceGroup.Done()
+
+	cs := &consoleService{make(chan string)}
+	go cs.Run()
+
+	for {
+		select {
+
+		case cmd := <-cs.CommandChan:
+
+			js.StreamChan <- cmd
+
+			// If we have a quit command, exit this service
+			if strings.HasPrefix(cmd, "{\"Name\":\"quit\"") {
+
+				log.Println("Quitting API service")
+				return
+			}
+
+		case reply := <-js.StreamChan:
+
+			fmt.Print(reply)
+		}
+	}
+}
+
+type consoleService struct {
+	CommandChan chan string
+}
+
+func (cs *consoleService) Run() {
+
+	log.Println("Starting console service")
 
 	// Read commands from stdin
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
-		fmt.Print("LM: ")
 
 		line, err := reader.ReadString('\n')
 
 		if err != nil {
 
-			log.Fatalln("CommandService:", err)
+			fmt.Println("ERROR:", err)
 			break
 		}
 
-		cmd := strings.ToUpper(strings.Trim(line, "\n\r\t "))
+		cmd := strings.Trim(line, "\n\r\t ")
 
-		// Send command back to client
 		cs.CommandChan <- cmd
 
 		// If we have a quit command, exit this service
-		if strings.HasPrefix(cmd, "QUIT") {
+		if strings.HasPrefix(cmd, "{\"Name\":\"quit\"") {
 
+			log.Println("Quitting console service")
 			return
 		}
 	}
