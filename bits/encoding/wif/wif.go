@@ -12,7 +12,7 @@ import (
 	"errors"
 	"math/big"
 
-	"libertymail-go/bits/base58"
+	"libertymail-go/bits/encoding/base58"
 )
 
 func Encode(keys *ecdsa.PrivateKey) (string, error) {

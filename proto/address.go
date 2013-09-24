@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	"libertymail-go/bits"
-	"libertymail-go/bits/base58"
+	"libertymail-go/bits/encoding/base58"
 )
 
 type Address struct {

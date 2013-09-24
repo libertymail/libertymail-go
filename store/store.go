@@ -5,7 +5,7 @@ import (
 	"os"
 
 	_ "github.com/mattn/go-sqlite3"
-	"libertymail-go/bits/wif"
+	"libertymail-go/bits/encoding/wif"
 	"libertymail-go/proto"
 )
 
