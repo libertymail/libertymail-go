@@ -14,42 +14,57 @@ import (
 	"sync"
 )
 
-/* Json API examples
+/*
 
-{"Name":"connect","Args":["127.0.0.1:30000"]}
-{"Name":"quit","Args":null}
-{"Name":"list","Args":["addresses","peers"]}
+Json API request examples:
+
+{"Request":"connect","Args":["127.0.0.1:30000"]}
+{"Request":"quit","Args":null}
+{"Request":"list","Args":["addresses","peers"]}
+
+Json API reply examples:
+
+{"Reply":"addresses","Items":[{"address":"LM:1234567890"},{"address":"LM:0987654321"}]}
 
 */
 
-type Command struct {
-	Name string
-	Args []string
+type RequestType struct {
+	Request string
+	Args    []string
 }
 
-func NewCommand(name string) *Command {
+func (r *RequestType) AddArgument(arg string) *RequestType {
 
-	c := new(Command)
-	c.Name = name
-
-	return c
+	r.Args = append(r.Args, arg)
+	return r
 }
 
-func (c *Command) Arg(p string) *Command {
+func (r *RequestType) String() string {
 
-	c.Args = append(c.Args, p)
-
-	return c
+	b, err := json.Marshal(r)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	return string(b)
 }
 
-func (c *Command) String() string {
+type ReplyType struct {
+	Reply string
+	Items []map[string]string
+}
 
-	b, _ := json.Marshal(c)
+func (r *ReplyType) String() string {
+
+	b, err := json.Marshal(r)
+	if err != nil {
+		log.Fatalln(err)
+	}
 	return string(b)
 }
 
 type JsonService struct {
-	StreamChan chan string
+	RequestChan chan *RequestType
+	ReplyChan   chan *ReplyType
 }
 
 func (js *JsonService) Run(serviceGroup *sync.WaitGroup) {
@@ -67,18 +82,24 @@ func (js *JsonService) Run(serviceGroup *sync.WaitGroup) {
 
 		case cmd := <-cs.CommandChan:
 
-			js.StreamChan <- cmd
+			req := new(RequestType)
+			if err := json.Unmarshal([]byte(cmd), &req); err != nil {
+				fmt.Println(err)
+				continue
+			}
+
+			js.RequestChan <- req
 
 			// If we have a quit command, exit this service
-			if strings.HasPrefix(cmd, "{\"Name\":\"quit\"") {
+			if req.Request == "quit" {
 
-				log.Println("Quitting API service")
+				log.Println("Quitting json service")
 				return
 			}
 
-		case reply := <-js.StreamChan:
+		case rep := <-js.ReplyChan:
 
-			fmt.Print(reply)
+			fmt.Println(rep)
 		}
 	}
 }
@@ -106,10 +127,12 @@ func (cs *consoleService) Run() {
 
 		cmd := strings.Trim(line, "\n\r\t ")
 
-		cs.CommandChan <- cmd
+		if len(cmd) > 0 {
+			cs.CommandChan <- cmd
+		}
 
 		// If we have a quit command, exit this service
-		if strings.HasPrefix(cmd, "{\"Name\":\"quit\"") {
+		if strings.HasPrefix(cmd, "{\"Identifier\":\"quit\"") {
 
 			log.Println("Quitting console service")
 			return
