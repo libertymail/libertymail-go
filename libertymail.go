@@ -5,7 +5,6 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -59,7 +58,7 @@ func main() {
 	db.SaveAddress(addr1)
 
 	// Start console service
-	apiService := &api.JsonService{make(chan string)}
+	apiService := &api.JsonService{make(chan *api.RequestType), make(chan *api.ReplyType)}
 	go apiService.Run(serviceGroup)
 
 	// Start listen service
@@ -78,44 +77,60 @@ func main() {
 	initiateHandshakeService := &grid.InitiateHandshakeService{make(chan net.Conn)}
 	go initiateHandshakeService.Run(serviceGroup)
 
-	var cmd api.Command
 L1:
 	for { // Event loop
 
 		select {
-		case request := <-apiService.StreamChan:
+		case req := <-apiService.RequestChan:
 
-			if err := json.Unmarshal([]byte(request), &cmd); err != nil {
-				log.Println(err)
-				continue
-			}
+			log.Println("Received command", req.Request)
 
-			log.Println("Received command", cmd.Name)
+			switch req.Request {
 
-			switch cmd.Name {
 			case "quit":
 
 				break L1
 
 			case "connect":
 
-				connectService.AddressChan <- cmd.Args[0]
+				if len(req.Args) > 0 {
+					connectService.AddressChan <- req.Args[0]
+				}
 
 			case "list":
 
-				switch cmd.Args[0] {
+				switch req.Args[0] {
 
 				case "peers":
 
-					reply := ""
-					for k, _ := range peers {
-						reply += k + "\n"
+					rep := new(api.ReplyType)
+					rep.Reply = "peers"
+
+					for i := 0; i < len(peers); i++ {
+						rep.Items[i] = make(map[string]string)
 					}
-					apiService.StreamChan <- reply
+
+					i := 0
+					for k, _ := range peers {
+						rep.Items[i]["ip"] = k
+						i++
+					}
+
+					apiService.ReplyChan <- rep
 
 				case "addresses":
 
-					apiService.StreamChan <- "LM:blahblahblah\nLM:blahblahblah\n"
+					// FIXME: faking a few addresses
+					rep := new(api.ReplyType)
+					rep.Reply = "addresses"
+
+					rep.Items = append(rep.Items, make(map[string]string))
+					rep.Items = append(rep.Items, make(map[string]string))
+
+					rep.Items[0]["address"] = "LM:1234567890"
+					rep.Items[1]["address"] = "LM:0987654321"
+
+					apiService.ReplyChan <- rep
 
 				default:
 				}
