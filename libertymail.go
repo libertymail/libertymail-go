@@ -57,7 +57,7 @@ func main() {
 	}
 	db.SaveAddress(addr1)
 
-	// Start console service
+	// Start Json API service
 	apiService := &api.JsonService{make(chan *api.RequestType), make(chan *api.ReplyType)}
 	go apiService.Run(serviceGroup)
 

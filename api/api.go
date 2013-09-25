@@ -14,11 +14,17 @@ import (
 	"sync"
 )
 
-/* Json API examples
+/*
+
+Json API request examples:
 
 {"Request":"connect","Args":["127.0.0.1:30000"]}
 {"Request":"quit","Args":null}
 {"Request":"list","Args":["addresses","peers"]}
+
+Json API reply examples:
+
+{"Reply":"addresses","Items":[{"address":"LM:1234567890"},{"address":"LM:0987654321"}]}
 
 */
 
@@ -121,7 +127,9 @@ func (cs *consoleService) Run() {
 
 		cmd := strings.Trim(line, "\n\r\t ")
 
-		cs.CommandChan <- cmd
+		if len(cmd) > 0 {
+			cs.CommandChan <- cmd
+		}
 
 		// If we have a quit command, exit this service
 		if strings.HasPrefix(cmd, "{\"Identifier\":\"quit\"") {
